@@ -36,29 +36,42 @@ other directory should be fine. By convention, GN uses `//out` or a
 subdirectory of `//out`, but you can also build into a directory outside of
 the source root just fine.
 
+Ninja generates multiple files:
+
+* A top-level `build.ninja` file, which includes all the others.
+* A `build.ninja.d` file containing the dependencies of the build.ninja file itself;
+  changing any of these dependencies will cause Ninja to re-run GN to regenerate
+  (update) the build files and then reload them before going on to build things.
+* A `toolchain.ninja` file for the rules the default toolchain will use.
+* A file for each additional GN target
+
+For example:
+
+```
+$ gn gen out
+Done. Made 2 targets from 2 files in 3ms
+$ find out -type f | sort
+out/args.gn
+out/build.ninja
+out/build.ninja.d
+out/obj/hello_c.ninja
+out/obj/hello_cpp.ninja
+out/toolchain.ninja
+$ ninja -C out -j 1 -v
 Running `gn gen out` produces:
-
-* `out/args.gn`: The GN args, if any, used to generate the file.
-* `out/build.ninja` The top-level Ninja file. It pulls in all the 
-   other Ninja files.
-* `out/build.ninja.d`: The dependencies of the top-level Ninja file; if
-   any of these files change, Ninja will re-run GN to regenerate
-   (update) the build files before trying to build anything.
-* `out/toolchain.ninja`: The rule definitions for the default toolchain.
-* `out/obj/hello_cpp.ninja`: The rules to build `//:hello_c`.
-* `out/obj/hello_cpp.ninja`: The rules to build `//:hello_cpp`.
-
-Running `ninja -C out -j 1 -v` produces:
-
-```bash
 ninja: Entering directory `out'
 [1/4] clang++ -MMD -MF obj/hello_cpp.o.d -o obj/hello_cpp.o -c ../hello_cpp.cpp
 [2/4] clang -MMD -MF obj/hello_c.o.d -o obj/hello_c.o -c ../hello_c.c
 [3/4] clang obj/hello_c.o  -o hello_c
 [4/4] clang obj/hello_cpp.o -lc++ -o hello_cpp
+$ out/hello
+Hello, world!
+$ out/hello_cpp
+Hello, world!
+$
 ```
 
-and that's all there is to it!
+That's all there is to it!
 
 [GN]: https://gn.googlesource.com/gn
 [Ninja]: https://ninja-build.org/
