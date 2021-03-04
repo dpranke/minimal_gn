@@ -64,7 +64,7 @@ ninja: Entering directory `out'
 [2/4] clang -MMD -MF obj/hello_c.o.d -o obj/hello_c.o -c ../hello_c.c
 [3/4] clang obj/hello_c.o  -o hello_c
 [4/4] clang obj/hello_cpp.o -lc++ -o hello_cpp
-$ out/hello
+$ out/hello_c
 Hello, world!
 $ out/hello_cpp
 Hello, world!
