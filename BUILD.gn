@@ -1,0 +1,35 @@
+declare_args() {
+  cc = "clang"
+  cxx = "clang++"
+  ld = "clang"
+}
+
+executable("hello_c") {
+  sources = [ "hello_c.c" ]
+}
+
+executable("hello_cpp") {
+  sources = [ "hello_cpp.cpp" ]
+  libs = [ "c++" ]
+}
+
+toolchain("toolchain") {
+  tool("cc") {
+    command = "$cc -MMD -MF {{output}}.d -o {{output}} -c {{source}}"
+    outputs = [ "{{target_out_dir}}/{{source_name_part}}.o" ]
+  }
+
+  tool("cxx") {
+    command = "$cxx -MMD -MF {{output}}.d -o {{output}} -c {{source}}"
+    outputs = [ "{{target_out_dir}}/{{source_name_part}}.o" ]
+  }
+
+  tool("link") {
+    command = "$ld {{inputs}} {{libs}} -o {{target_output_name}}"
+    outputs = [ "{{target_output_name}}" ]
+  }
+
+  tool("stamp") {
+    command = "touch {{output}}"
+  }
+}
