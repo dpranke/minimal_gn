@@ -8,7 +8,6 @@ action("world") {
   gen_dir = "./gen"
   outputs = [ "$root_build_dir/$gen_dir/world.cc", "$root_build_dir/$gen_dir/world.h"]
   args = [ gen_dir, "world.cc", "world.h" ]
-  include_dirs = [ "$root_build_dir/$gen_dir" ]
 }
 
 executable("hello") {
