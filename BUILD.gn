@@ -1,26 +1,26 @@
 declare_args() {
-  cc = "clang"
   cxx = "clang++"
-  ld = "clang"
+  ld = "clang++"
 }
 
-executable("hello_c") {
-  sources = [ "hello_c.c" ]
+action("world") {
+  script = "generate_world.py"
+  gen_dir = "./gen"
+  outputs = [ "$root_build_dir/$gen_dir/world.cc", "$root_build_dir/$gen_dir/world.h"]
+  args = [ gen_dir, "world.cc", "world.h" ]
+  include_dirs = [ "$root_build_dir/$gen_dir" ]
 }
 
-executable("hello_cpp") {
-  sources = [ "hello_cpp.cpp" ]
+executable("hello") {
+  sources = [ "hello.cc" ] + get_target_outputs(":world")
+  include_dirs = [ "$root_build_dir/gen" ]
   libs = [ "c++" ]
+  deps = [ ":world" ]
 }
 
 toolchain("toolchain") {
-  tool("cc") {
-    command = "$cc -MMD -MF {{output}}.d -o {{output}} -c {{source}}"
-    outputs = [ "{{target_out_dir}}/{{source_name_part}}.o" ]
-  }
-
   tool("cxx") {
-    command = "$cxx -MMD -MF {{output}}.d -o {{output}} -c {{source}}"
+    command = "$cxx -MMD -MF {{output}}.d {{include_dirs}} -o {{output}} -c {{source}}"
     outputs = [ "{{target_out_dir}}/{{source_name_part}}.o" ]
   }
 

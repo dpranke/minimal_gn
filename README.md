@@ -1,7 +1,7 @@
 # A Minimal GN configuration
 
-The [GN] build tool is used by Chromium and Fuchsia in conjunction
-with the [Ninja] build tool to build software.
+The [GN] build tool is used by the Chromium and Fuchsia projects (and others)
+in conjunction with the [Ninja] build tool to build software.
 
 GN is not particularly designed to be easy to use for small projects,
 and it is not designed to be a "batteries included" system: you have
@@ -27,47 +27,51 @@ Good style (and maintenance in practice) would usually separate out the
 toolchain definitions into its own file, but this project keeps them all
 together for simplicity.
 
-This (almost) minimal project will build two executables, one written in C and
-one written in C++.
+This (almost) minimal project will build two executables, one written in C
+and one written in C++.
 
 GN generates a set of Ninja files to run the build (hence the name,
 Generate Ninja). You cannot generate the files into the source root, but any
 other directory should be fine. By convention, GN uses `//out` or a
 subdirectory of `//out`, but you can also build into a directory outside of
-the source root just fine.
+the source root just fine. Running `gn gen` will create an `arg.gn` file
+in the output directory if one doesn't already exist. You can use that
+file to set arguments that alter how your build works.
 
-Ninja generates multiple files:
+The generated GN files include:
 
 * A top-level `build.ninja` file, which includes all the others.
-* A `build.ninja.d` file containing the dependencies of the build.ninja file itself;
-  changing any of these dependencies will cause Ninja to re-run GN to regenerate
-  (update) the build files and then reload them before going on to build things.
-* A `toolchain.ninja` file for the rules the default toolchain will use.
-* A file for each additional GN target
+* A `build.ninja.d` file containing the dependencies of the build.ninja file
+  itself; changing any of these dependencies will cause Ninja to re-run GN
+  to regenerate (update) the build files and then reload them before going
+  on to build things.
+* A `toolchain.ninja` file for the rules the default toolchain will use
+  and any `action` targets that will run in that toolchain.
+* A `.ninja` file for each BUILD.gn file that contains targets that are
+  compiled as part of that BUILD.gn.
 
-For example:
+Example:
 
 ```
 $ gn gen out
 Done. Made 2 targets from 2 files in 3ms
 $ find out -type f | sort
+out/.ninja_log
 out/args.gn
 out/build.ninja
 out/build.ninja.d
-out/obj/hello_c.ninja
-out/obj/hello_cpp.ninja
+out/obj/hello.ninja
 out/toolchain.ninja
 $ ninja -C out -j 1 -v
-Running `gn gen out` produces:
 ninja: Entering directory `out'
-[1/4] clang++ -MMD -MF obj/hello_cpp.o.d -o obj/hello_cpp.o -c ../hello_cpp.cpp
-[2/4] clang -MMD -MF obj/hello_c.o.d -o obj/hello_c.o -c ../hello_c.c
-[3/4] clang obj/hello_c.o  -o hello_c
-[4/4] clang obj/hello_cpp.o -lc++ -o hello_cpp
-$ out/hello_c
-Hello, world!
-$ out/hello_cpp
-Hello, world!
+[0/1] $PATH_TO_GN/gn --root=./.. -q --regeneration gen .
+[1/5] python3 ../generate_world.py ./gen world.cc world.h
+[2/5] touch obj/world.stamp
+[3/5] clang++ -MMD -MF obj/hello.o.d -Igen -o obj/hello.o -c ../hello.cc
+[4/5] clang++ -MMD -MF obj/world.o.d -Igen -o obj/world.o -c gen/world.cc
+[5/5] clang++ obj/hello.o obj/world.o -lc++ -o hello
+$ out/hello
+Hello, world.
 $
 ```
 
