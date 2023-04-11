@@ -28,6 +28,7 @@ executable("hello") {
 toolchain("toolchain") {
   tool("cxx") {
     command = "$cxx -MMD -MF {{output}}.d {{include_dirs}} -o {{output}} -c {{source}}"
+    depfile = "{{output}}.d"
     outputs = [ "{{target_out_dir}}/{{source_name_part}}.o" ]
   }
 
