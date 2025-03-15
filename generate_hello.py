@@ -5,7 +5,6 @@ import sys
 
 out_dir = sys.argv[1]
 cc_file = sys.argv[2]
-h_file = sys.argv[3]
 
 def write_if_changed(path, contents):
     if not os.path.exists(path):
@@ -21,14 +20,12 @@ def write_if_changed(path, contents):
             fp.write(contents)
 
 
-write_if_changed(f'{out_dir}/{cc_file}', f'''\
-#include "{h_file}"
+write_if_changed(f'{out_dir}/{cc_file}', r'''\
+#include <iostream>
 
-const char *world() {{
-    return "world";
-}}
-''')
+#include "bar.h"
 
-write_if_changed(f'{out_dir}/{h_file}', '''\
-const char *world();
+int main(int argc, const char **argv) {
+  std::cout << "hello " << bar() << "\n";
+}
 ''')

@@ -1,43 +1,80 @@
 declare_args() {
   cxx = "clang++"
   ld = "clang++"
+  ar = "ar"
+
+  # llvm = "$csrc/third_party/llvm-build/Release+Asserts"
+  # llvm_bin = "$llvm/bin/"
+  # cxx = "${llvm_bin}clang++"
+  # ld = "${llvm_bin}clang++"
+  # ar = "${llvm_bin}llvm-ar"
 }
 
-action("world") {
-  gen_dir = "./gen"
-
-  script = "generate_world.py"
-  args = [
-    gen_dir,
-    "world.cc",
-    "world.h",
-  ]
-  outputs = [
-    "$root_build_dir/$gen_dir/world.cc",
-    "$root_build_dir/$gen_dir/world.h",
-  ]
+action("generate_hello") {
+  script = "generate_hello.py"
+  args = [ "./gen", "hello.cc" ]
+  outputs = [ "$target_gen_dir/hello.cc" ]
 }
 
 executable("hello") {
-  sources = [ "hello.cc" ] + get_target_outputs(":world")
-  include_dirs = [ "$root_build_dir/gen" ]
-  libs = [ "c++" ]
-  deps = [ ":world" ]
+  sources = get_target_outputs(":generate_hello")
+  deps = [
+    ":bar",
+    ":generate_hello",
+  ]
+}
+
+static_library("foo") {
+  sources = [ "foo.cc" ]
+}
+
+static_library("bar") {
+  sources = [ "bar.cc" ]
+  deps = [ ":foo" ]
 }
 
 toolchain("toolchain") {
   tool("cxx") {
-    command = "$cxx -MMD -MF {{output}}.d {{include_dirs}} -o {{output}} -c {{source}}"
+    description = "CXX {{source}}"
+
     depfile = "{{output}}.d"
-    outputs = [ "{{target_out_dir}}/{{source_name_part}}.o" ]
+    depsformat = "gcc"
+
+    # A more scalable implementation would use configs for these values.
+    _depflags = "-MMD -MF $depfile"
+    _cflags_cc = "-std=c++20"
+    _includes = "-I" + rebase_path("//", root_build_dir) + " "
+    _includes += "-I" + rebase_path(root_gen_dir, root_build_dir)
+    command = "$cxx $_depflags $_cflags_cc $_includes "
+    command += "-c {{source}} -o {{output}}"
+
+    outputs =
+        [ "{{target_out_dir}}/{{source_name_part}}.o" ]
+  }
+
+  tool("alink") {
+    _lib = "{{target_out_dir}}/lib{{target_output_name}}.a"
+
+    description = "ALINK ${_lib}"
+
+
+    command = "rm -f $_lib && $ar -rc $_lib {{inputs}}"
+
+    outputs = [ "$_lib" ]
   }
 
   tool("link") {
-    command = "$ld {{inputs}} {{libs}} -o {{target_output_name}}"
+    description = "LINK {{target_output_name}}"
+
+    _ldflags = "-fuse-ld=lld"
+    command = "$ld $_ldflags -o ./{{target_output_name}} {{inputs}}"
+
     outputs = [ "{{target_output_name}}" ]
   }
 
   tool("stamp") {
+    description = "STAMP {{output}}"
+
     command = "touch {{output}}"
   }
 }

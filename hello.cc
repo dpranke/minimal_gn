@@ -1,7 +1,8 @@
+\
 #include <iostream>
-#include "world.h"
 
-int main(int argc, char** argv) {
-  std::cout << "Hello " << world() << ".\n";
-  return 0;
+#include "bar.h"
+
+int main(int argc, const char **argv) {
+  std::cout << "hello " << bar() << "\n";
 }
